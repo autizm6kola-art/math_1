@@ -43,6 +43,8 @@ function App() {
   const [ranges, setRanges] = useState([]);
   const [progressByRange, setProgressByRange] = useState({});
   const [loading, setLoading] = useState(false);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+  const [totalTasks, setTotalTasks] = useState(0);
 
   const getStorageKey = (range) => `progress_${range.start}_${range.end}`;
 
@@ -54,7 +56,6 @@ function App() {
         setAllTasks(data);
         setLoading(false);
 
-        // Формируем диапазоны по 10 заданий
         const sorted = [...data].sort((a, b) => a.id - b.id);
         const dynamicRanges = [];
 
@@ -76,7 +77,6 @@ function App() {
       });
   }, []);
 
-  // Загружаем прогресс по каждому диапазону
   useEffect(() => {
     const progress = {};
 
@@ -97,6 +97,18 @@ function App() {
     });
 
     setProgressByRange(progress);
+
+    // Общий прогресс
+    const total = allTasks.length;
+    const correct = Object.entries(progress).reduce((acc, [key, percent], index) => {
+      const range = ranges[index];
+      if (!range) return acc;
+      const rangeTasks = allTasks.filter(t => t.id >= range.start && t.id <= range.end).length;
+      return acc + Math.round((percent / 100) * rangeTasks);
+    }, 0);
+
+    setTotalCorrect(correct);
+    setTotalTasks(total);
   }, [ranges, allTasks]);
 
   useEffect(() => {
@@ -181,30 +193,34 @@ function App() {
 
       <h1 style={{ margin: '0 0 10px 210px'}}>ЗАДАЧИ</h1>
 
+      <ProgressBar correct={totalCorrect} total={totalTasks} />
+      <p style={{ textAlign: 'center', marginBottom: '20px' }}>
+        Решено {totalCorrect} задач из {totalTasks}
+      </p>
+
       {ranges.map((range, index) => {
-  const key = getStorageKey(range);
-  const progress = progressByRange[key] || 0;
+        const key = getStorageKey(range);
+        const progress = progressByRange[key] || 0;
 
-  let buttonClass = 'range-button';
-  if (progress === 100) {
-    buttonClass += ' completed';
-  } else if (progress > 0) {
-    buttonClass += ' partial';
-  }
+        let buttonClass = 'range-button';
+        if (progress === 100) {
+          buttonClass += ' completed';
+        } else if (progress > 0) {
+          buttonClass += ' partial';
+        }
 
-  const label = `${range.start}–${range.end} (${Math.round(progress)}%)`;
+        const label = `${range.start}–${range.end} (${Math.round(progress)}%)`;
 
-  return (
-    <button
-      key={index}
-      onClick={() => setSelectedRange(range)}
-      className={buttonClass}
-    >
-      {label}
-    </button>
-  );
-})}
-
+        return (
+          <button
+            key={index}
+            onClick={() => setSelectedRange(range)}
+            className={buttonClass}
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -213,7 +229,6 @@ function Task({ task, onCorrect, alreadyCorrect }) {
   const [answer, setAnswer] = React.useState('');
   const [isCorrect, setIsCorrect] = React.useState(null);
 
-  // Устанавливаем isCorrect в true, если задача уже решена
   useEffect(() => {
     if (alreadyCorrect) {
       setIsCorrect(true);
@@ -222,7 +237,7 @@ function Task({ task, onCorrect, alreadyCorrect }) {
 
   const handleChange = (e) => {
     setAnswer(e.target.value);
-    setIsCorrect(null); // Сбросим подсветку при изменении
+    setIsCorrect(null);
   };
 
   const checkAnswer = () => {
@@ -246,7 +261,7 @@ function Task({ task, onCorrect, alreadyCorrect }) {
   return (
     <div style={{ marginBottom: '20px' }}>
       <p>Задача {task.id}</p>
-      <audio controls src={task.audio}>
+      <audio controls src={process.env.PUBLIC_URL + task.audio}>
         Ваш браузер не поддерживает аудио.
       </audio>
       <br />
@@ -264,6 +279,5 @@ function Task({ task, onCorrect, alreadyCorrect }) {
     </div>
   );
 }
-
 
 export default App;
