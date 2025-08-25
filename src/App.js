@@ -50,7 +50,7 @@ function App() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(process.env.PUBLIC_URL + '/tasks.json')
+    fetch(process.env.PUBLIC_URL + '/tasks_two.json')
       .then((res) => res.json())
       .then((data) => {
         setAllTasks(data);
