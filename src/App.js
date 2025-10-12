@@ -507,7 +507,7 @@ function App() {
           buttonClass += ' partial';
         }
 
-        const label = `${range.start}–${range.end}`;
+        const label = `${index +1}`;
         return (
           <button
             key={index}
